@@ -1,0 +1,55 @@
+name: Feature Implementation
+description: Track a feature from the roadmap
+title: "[PHASE-X]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to track roadmap features.
+  
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Project Phase
+      options:
+        - Phase 1: Foundation
+        - Phase 2: Application Bootstrap
+        - Phase 3: CI/CD Pipeline
+        - Phase 4: Security Hardening
+        - Phase 5: Observability
+        - Phase 6: Autoscaling
+        - Phase 7: Multi-Cloud Expansion
+        - Phase 8: Production Readiness
+    validations:
+      required: true
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: What capability are we adding?
+      placeholder: |
+        Example: Add Crossplane composition for AWS DocumentDB
+    validations:
+      required: true
+  
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know this is complete?
+      placeholder: |
+        - [ ] XRD created and validated
+        - [ ] Composition tested with claim
+        - [ ] Connection secrets available in app namespace
+        - [ ] Documentation updated
+    validations:
+      required: true
+  
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: What needs to be complete first?
+      placeholder: "Blocks: #X, Depends on: #Y"

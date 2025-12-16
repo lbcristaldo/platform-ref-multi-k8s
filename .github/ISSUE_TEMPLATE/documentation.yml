@@ -1,0 +1,26 @@
+name: Documentation Request
+description: Suggest docs improvements
+title: "[DOCS]: "
+labels: ["documentation"]
+body:
+  - type: textarea
+    id: request
+    attributes:
+      label: What needs documentation?
+      placeholder: |
+        Example: Add runbook for KEDA scaler troubleshooting
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: Documentation Type
+      options:
+        - Architecture Decision Record (ADR)
+        - Runbook / Troubleshooting
+        - API Reference
+        - Tutorial / How-To
+        - README Update
+    validations:
+      required: true

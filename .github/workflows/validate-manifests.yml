@@ -1,0 +1,31 @@
+name: Validate Kubernetes Manifests
+
+on:
+  pull_request:
+    paths:
+      - 'cluster/**'
+      - 'apis/**'
+      - 'examples/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Validate Crossplane Compositions
+        run: |
+          kubectl apply --dry-run=client -f apis/
+      
+      - name: Validate App Manifests
+        run: |
+          kubectl apply --dry-run=client -k cluster/app/
+      
+      - name: Lint YAML
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .
+          config_file: .yamllint
