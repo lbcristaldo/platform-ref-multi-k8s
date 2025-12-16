@@ -1,0 +1,86 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xmongodatabases.database.platform.example.com
+spec:
+  group: database.platform.example.com
+  names:
+    kind: XMongoDatabase
+    plural: xmongodatabases
+  claimNames:
+    kind: MongoDatabase
+    plural: mongodatabases
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    provider:
+                      description: Cloud provider (aws, gcp, azure)
+                      type: string
+                      enum:
+                        - aws
+                        - gcp
+                        - azure
+                    region:
+                      description: Cloud region
+                      type: string
+                    instanceClass:
+                      description: Instance size (small, medium, large)
+                      type: string
+                      enum:
+                        - small
+                        - medium
+                        - large
+                      default: small
+                    storageGB:
+                      description: Storage size in GB
+                      type: integer
+                      default: 20
+                      minimum: 20
+                      maximum: 500
+                    engineVersion:
+                      description: MongoDB version
+                      type: string
+                      default: "5.0"
+                    backupRetentionDays:
+                      description: Backup retention period
+                      type: integer
+                      default: 7
+                      minimum: 1
+                      maximum: 35
+                    multiAZ:
+                      description: Enable multi-AZ deployment
+                      type: boolean
+                      default: true
+                  required:
+                    - provider
+                    - region
+              required:
+                - parameters
+            status:
+              type: object
+              properties:
+                endpoint:
+                  description: Database connection endpoint
+                  type: string
+                port:
+                  description: Database port
+                  type: integer
+                connectionSecretRef:
+                  description: Secret containing connection details
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string

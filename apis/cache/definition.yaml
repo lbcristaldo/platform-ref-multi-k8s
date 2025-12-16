@@ -1,0 +1,98 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xrediscaches.cache.platform.example.com
+spec:
+  group: cache.platform.example.com
+  names:
+    kind: XRedisCache
+    plural: xrediscaches
+  claimNames:
+    kind: RedisCache
+    plural: rediscaches
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    provider:
+                      description: Cloud provider (aws, gcp, azure)
+                      type: string
+                      enum:
+                        - aws
+                        - gcp
+                        - azure
+                    region:
+                      description: Cloud region
+                      type: string
+                    nodeType:
+                      description: Node instance type (small, medium, large)
+                      type: string
+                      enum:
+                        - small
+                        - medium
+                        - large
+                      default: small
+                    numCacheNodes:
+                      description: Number of cache nodes
+                      type: integer
+                      default: 1
+                      minimum: 1
+                      maximum: 6
+                    engineVersion:
+                      description: Redis engine version
+                      type: string
+                      default: "7.0"
+                    port:
+                      description: Redis port
+                      type: integer
+                      default: 6379
+                    automaticFailoverEnabled:
+                      description: Enable automatic failover (requires 2+ nodes)
+                      type: boolean
+                      default: false
+                    snapshotRetentionLimit:
+                      description: Number of days to retain backups
+                      type: integer
+                      default: 5
+                      minimum: 0
+                      maximum: 35
+                    transitEncryptionEnabled:
+                      description: Enable in-transit encryption (TLS)
+                      type: boolean
+                      default: true
+                    atRestEncryptionEnabled:
+                      description: Enable at-rest encryption
+                      type: boolean
+                      default: true
+                  required:
+                    - provider
+                    - region
+              required:
+                - parameters
+            status:
+              type: object
+              properties:
+                endpoint:
+                  description: Cache endpoint
+                  type: string
+                port:
+                  description: Cache port
+                  type: integer
+                connectionSecretRef:
+                  description: Secret containing connection details
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string

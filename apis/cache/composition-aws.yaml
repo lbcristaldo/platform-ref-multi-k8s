@@ -1,0 +1,209 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xrediscaches.aws.cache.platform.example.com
+  labels:
+    provider: aws
+    cache: redis
+spec:
+  writeConnectionSecretsToNamespace: crossplane-system
+  compositeTypeRef:
+    apiVersion: cache.platform.example.com/v1alpha1
+    kind: XRedisCache
+  
+  resources:
+    # Subnet Group for ElastiCache
+    - name: elasticache-subnet-group
+      base:
+        apiVersion: elasticache.aws.upbound.io/v1beta1
+        kind: SubnetGroup
+        spec:
+          forProvider:
+            region: us-east-1
+            description: Subnet group for ElastiCache Redis
+            subnetIdSelector:
+              matchLabels:
+                type: private
+            tags:
+              managed-by: crossplane
+              service: elasticache
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+          toFieldPath: spec.forProvider.tags.namespace
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.labels[crossplane.io/claim-name]
+          toFieldPath: spec.forProvider.tags.claim
+    
+    # Security Group for ElastiCache
+    - name: elasticache-security-group
+      base:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        kind: SecurityGroup
+        spec:
+          forProvider:
+            region: us-east-1
+            description: Security group for ElastiCache Redis cluster
+            vpcIdSelector:
+              matchLabels:
+                crossplane-managed: "true"
+            tags:
+              managed-by: crossplane
+              service: elasticache
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+    
+    # Security Group Rule - Allow Redis port
+    - name: elasticache-sg-rule-ingress
+      base:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        kind: SecurityGroupRule
+        spec:
+          forProvider:
+            region: us-east-1
+            type: ingress
+            fromPort: 6379
+            toPort: 6379
+            protocol: tcp
+            cidrBlocks:
+              - 10.0.0.0/16  # VPC CIDR
+            securityGroupIdSelector:
+              matchControllerRef: true
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.port
+          toFieldPath: spec.forProvider.fromPort
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.port
+          toFieldPath: spec.forProvider.toPort
+    
+    # ElastiCache Parameter Group
+    - name: elasticache-parameter-group
+      base:
+        apiVersion: elasticache.aws.upbound.io/v1beta1
+        kind: ParameterGroup
+        spec:
+          forProvider:
+            region: us-east-1
+            family: redis7
+            description: Custom parameter group for Redis
+            parameter:
+              - name: maxmemory-policy
+                value: allkeys-lru
+              - name: timeout
+                value: "300"
+            tags:
+              managed-by: crossplane
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.engineVersion
+          toFieldPath: spec.forProvider.family
+          transforms:
+            - type: string
+              string:
+                fmt: "redis%s"
+                type: Format
+    
+    # ElastiCache Replication Group (cluster mode disabled)
+    - name: elasticache-replication-group
+      base:
+        apiVersion: elasticache.aws.upbound.io/v1beta1
+        kind: ReplicationGroup
+        spec:
+          forProvider:
+            region: us-east-1
+            engine: redis
+            engineVersion: "7.0"
+            nodeType: cache.t3.micro
+            numCacheClusters: 1
+            port: 6379
+            parameterGroupNameSelector:
+              matchControllerRef: true
+            subnetGroupNameSelector:
+              matchControllerRef: true
+            securityGroupIdSelector:
+              matchControllerRef: true
+            automaticFailoverEnabled: false
+            multiAzEnabled: false
+            atRestEncryptionEnabled: true
+            transitEncryptionEnabled: true
+            authTokenSecretRef:
+              name: elasticache-auth-token
+              namespace: crossplane-system
+              key: token
+            snapshotRetentionLimit: 5
+            snapshotWindow: "03:00-05:00"
+            maintenanceWindow: "sun:05:00-sun:07:00"
+            description: Managed by Crossplane
+            tags:
+              managed-by: crossplane
+              compliance: production
+          writeConnectionSecretToRef:
+            namespace: crossplane-system
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.engineVersion
+          toFieldPath: spec.forProvider.engineVersion
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.nodeType
+          toFieldPath: spec.forProvider.nodeType
+          transforms:
+            - type: map
+              map:
+                small: cache.t3.micro
+                medium: cache.r6g.large
+                large: cache.r6g.xlarge
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.numCacheNodes
+          toFieldPath: spec.forProvider.numCacheClusters
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.port
+          toFieldPath: spec.forProvider.port
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.automaticFailoverEnabled
+          toFieldPath: spec.forProvider.automaticFailoverEnabled
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.automaticFailoverEnabled
+          toFieldPath: spec.forProvider.multiAzEnabled
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.snapshotRetentionLimit
+          toFieldPath: spec.forProvider.snapshotRetentionLimit
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.atRestEncryptionEnabled
+          toFieldPath: spec.forProvider.atRestEncryptionEnabled
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.transitEncryptionEnabled
+          toFieldPath: spec.forProvider.transitEncryptionEnabled
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
+          toFieldPath: spec.writeConnectionSecretToRef.name
+          transforms:
+            - type: string
+              string:
+                fmt: "redis-%s"
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.primaryEndpointAddress
+          toFieldPath: status.endpoint
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.port
+          toFieldPath: status.port
+        - type: ToCompositeFieldPath
+          fromFieldPath: metadata.annotations[crossplane.io/external-name]
+          toFieldPath: status.connectionSecretRef.name
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+          toFieldPath: status.connectionSecretRef.namespace

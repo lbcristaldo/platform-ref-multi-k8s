@@ -1,0 +1,241 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xmongodatabases.aws.database.platform.example.com
+  labels:
+    provider: aws
+    database: mongodb
+spec:
+  writeConnectionSecretsToNamespace: crossplane-system
+  compositeTypeRef:
+    apiVersion: database.platform.example.com/v1alpha1
+    kind: XMongoDatabase
+  
+  resources:
+    # Subnet Group for DocumentDB
+    - name: documentdb-subnet-group
+      base:
+        apiVersion: docdb.aws.upbound.io/v1beta1
+        kind: SubnetGroup
+        spec:
+          forProvider:
+            region: us-east-1  # Patched from claim
+            subnetIdSelector:
+              matchLabels:
+                type: private
+            tags:
+              managed-by: crossplane
+              service: documentdb
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+          toFieldPath: spec.forProvider.tags.namespace
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.labels[crossplane.io/claim-name]
+          toFieldPath: spec.forProvider.tags.claim
+    
+    # Security Group for DocumentDB
+    - name: documentdb-security-group
+      base:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        kind: SecurityGroup
+        spec:
+          forProvider:
+            region: us-east-1
+            description: Security group for DocumentDB cluster
+            vpcIdSelector:
+              matchLabels:
+                crossplane-managed: "true"
+            tags:
+              managed-by: crossplane
+              service: documentdb
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+    
+    # Security Group Rule - Allow MongoDB port
+    - name: documentdb-sg-rule-ingress
+      base:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        kind: SecurityGroupRule
+        spec:
+          forProvider:
+            region: us-east-1
+            type: ingress
+            fromPort: 27017
+            toPort: 27017
+            protocol: tcp
+            cidrBlocks:
+              - 10.0.0.0/16  # VPC CIDR
+            securityGroupIdSelector:
+              matchControllerRef: true
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+    
+    # DocumentDB Cluster Parameter Group
+    - name: documentdb-parameter-group
+      base:
+        apiVersion: docdb.aws.upbound.io/v1beta1
+        kind: ClusterParameterGroup
+        spec:
+          forProvider:
+            region: us-east-1
+            family: docdb5.0
+            description: Custom parameter group for DocumentDB
+            parameter:
+              - name: tls
+                value: "enabled"
+              - name: audit_logs
+                value: "enabled"
+            tags:
+              managed-by: crossplane
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.engineVersion
+          toFieldPath: spec.forProvider.family
+          transforms:
+            - type: string
+              string:
+                fmt: "docdb%s"
+    
+    # DocumentDB Cluster
+    - name: documentdb-cluster
+      base:
+        apiVersion: docdb.aws.upbound.io/v1beta1
+        kind: Cluster
+        spec:
+          forProvider:
+            region: us-east-1
+            engine: docdb
+            engineVersion: "5.0"
+            masterUsername: admin
+            masterPasswordSecretRef:
+              name: documentdb-admin-password
+              namespace: crossplane-system
+              key: password
+            backupRetentionPeriod: 7
+            preferredBackupWindow: "03:00-04:00"
+            storageEncrypted: true
+            enabledCloudwatchLogsExports:
+              - audit
+              - profiler
+            dbSubnetGroupNameSelector:
+              matchControllerRef: true
+            dbClusterParameterGroupNameSelector:
+              matchControllerRef: true
+            vpcSecurityGroupIdSelector:
+              matchControllerRef: true
+            skipFinalSnapshot: false
+            finalSnapshotIdentifier: final-snapshot
+            tags:
+              managed-by: crossplane
+              compliance: production
+          writeConnectionSecretToRef:
+            namespace: crossplane-system
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.engineVersion
+          toFieldPath: spec.forProvider.engineVersion
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.backupRetentionDays
+          toFieldPath: spec.forProvider.backupRetentionPeriod
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
+          toFieldPath: spec.writeConnectionSecretToRef.name
+          transforms:
+            - type: string
+              string:
+                fmt: "docdb-%s"
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
+          toFieldPath: spec.forProvider.finalSnapshotIdentifier
+          transforms:
+            - type: string
+              string:
+                fmt: "docdb-final-%s"
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.endpoint
+          toFieldPath: status.endpoint
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.port
+          toFieldPath: status.port
+    
+    # DocumentDB Cluster Instance (primary)
+    - name: documentdb-instance-primary
+      base:
+        apiVersion: docdb.aws.upbound.io/v1beta1
+        kind: ClusterInstance
+        spec:
+          forProvider:
+            region: us-east-1
+            clusterIdentifierSelector:
+              matchControllerRef: true
+            instanceClass: db.t3.medium
+            engine: docdb
+            tags:
+              managed-by: crossplane
+              role: primary
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.instanceClass
+          toFieldPath: spec.forProvider.instanceClass
+          transforms:
+            - type: map
+              map:
+                small: db.t3.medium
+                medium: db.r5.large
+                large: db.r5.xlarge
+    
+    # DocumentDB Cluster Instance (replica) - only if multiAZ
+    - name: documentdb-instance-replica
+      base:
+        apiVersion: docdb.aws.upbound.io/v1beta1
+        kind: ClusterInstance
+        spec:
+          forProvider:
+            region: us-east-1
+            clusterIdentifierSelector:
+              matchControllerRef: true
+            instanceClass: db.t3.medium
+            engine: docdb
+            tags:
+              managed-by: crossplane
+              role: replica
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.instanceClass
+          toFieldPath: spec.forProvider.instanceClass
+          transforms:
+            - type: map
+              map:
+                small: db.t3.medium
+                medium: db.r5.large
+                large: db.r5.xlarge
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.multiAZ
+          toFieldPath: spec.forProvider.instanceClass
+          transforms:
+            - type: string
+              string:
+                type: Convert
+                convert: ToNull
+      readinessChecks:
+        - type: None
