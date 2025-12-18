@@ -1,0 +1,43 @@
+# Development environment with smaller resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chatapp-dev
+  labels:
+    app: chatapp
+    environment: development
+
+---
+apiVersion: database.platform.example.com/v1alpha1
+kind: MongoDatabase
+metadata:
+  name: chatapp-mongodb
+  namespace: chatapp-dev
+spec:
+  parameters:
+    provider: aws
+    region: us-east-1
+    instanceClass: small
+    storageGB: 20
+    engineVersion: "5.0"
+    backupRetentionDays: 1
+    multiAZ: false
+
+---
+apiVersion: cache.platform.example.com/v1alpha1
+kind: RedisCache
+metadata:
+  name: chatapp-redis
+  namespace: chatapp-dev
+spec:
+  parameters:
+    provider: aws
+    region: us-east-1
+    nodeType: small
+    numCacheNodes: 1
+    engineVersion: "7.0"
+    port: 6379
+    automaticFailoverEnabled: false
+    snapshotRetentionLimit: 0
+    transitEncryptionEnabled: true
+    atRestEncryptionEnabled: true

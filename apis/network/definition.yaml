@@ -1,0 +1,69 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xnetworks.network.platform.example.com
+spec:
+  group: network.platform.example.com
+  names:
+    kind: XNetwork
+    plural: xnetworks
+  claimNames:
+    kind: Network
+    plural: networks
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    provider:
+                      description: Cloud provider
+                      type: string
+                      enum:
+                        - aws
+                        - gcp
+                        - azure
+                    region:
+                      description: Cloud region
+                      type: string
+                    cidrBlock:
+                      description: VPC CIDR block
+                      type: string
+                      default: "10.0.0.0/16"
+                    enableDnsHostnames:
+                      description: Enable DNS hostnames
+                      type: boolean
+                      default: true
+                    enableDnsSupport:
+                      description: Enable DNS support
+                      type: boolean
+                      default: true
+                  required:
+                    - provider
+                    - region
+              required:
+                - parameters
+            status:
+              type: object
+              properties:
+                vpcId:
+                  description: VPC identifier
+                  type: string
+                privateSubnetIds:
+                  description: List of private subnet IDs
+                  type: array
+                  items:
+                    type: string
+                publicSubnetIds:
+                  description: List of public subnet IDs
+                  type: array
+                  items:
+                    type: string

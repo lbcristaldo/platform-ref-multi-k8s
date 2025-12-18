@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chatapp
+  labels:
+    app: chatapp
+    environment: production
+
+---
+apiVersion: database.platform.example.com/v1alpha1
+kind: MongoDatabase
+metadata:
+  name: chatapp-mongodb
+  namespace: chatapp
+spec:
+  parameters:
+    provider: aws
+    region: us-east-1
+    instanceClass: small
+    storageGB: 20
+    engineVersion: "5.0"
+    backupRetentionDays: 7
+    multiAZ: true
+
+---
+apiVersion: cache.platform.example.com/v1alpha1
+kind: RedisCache
+metadata:
+  name: chatapp-redis
+  namespace: chatapp
+spec:
+  parameters:
+    provider: aws
+    region: us-east-1
+    nodeType: small
+    numCacheNodes: 2
+    engineVersion: "7.0"
+    port: 6379
+    automaticFailoverEnabled: true
+    snapshotRetentionLimit: 5
+    transitEncryptionEnabled: true
+    atRestEncryptionEnabled: true
