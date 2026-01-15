@@ -1,0 +1,35 @@
+# Test Crossplane composition rendering with different inputs
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: composition-test-cases
+  namespace: default
+data:
+  test-small-db.yaml: |
+    apiVersion: database.platform.example.com/v1alpha1
+    kind: MongoDatabase
+    metadata:
+      name: test-small
+      namespace: default
+    spec:
+      parameters:
+        provider: aws
+        region: us-east-1
+        instanceClass: small
+        storageGB: 20
+  
+  test-large-db.yaml: |
+    apiVersion: database.platform.example.com/v1alpha1
+    kind: MongoDatabase
+    metadata:
+      name: test-large
+      namespace: default
+    spec:
+      parameters:
+        provider: aws
+        region: us-west-2
+        instanceClass: large
+        storageGB: 500
+        multiAZ: true
+

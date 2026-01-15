@@ -1,8 +1,28 @@
-/.cache
-/.work
-/_output
-/results
-/.idea
+# AWS Credentials - NEVER COMMIT
+cluster/providers/aws/credentials-secret.yaml
 
-*.xpkg
-kubeconfig
+# Database secrets
+cluster/secrets/*-password.yaml
+cluster/secrets/*-token.yaml
+!cluster/secrets/*-example.yaml
+
+# LocalStack (legacy, not used)
+.localstack/
+
+# Kubernetes configs
+*.kubeconfig
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

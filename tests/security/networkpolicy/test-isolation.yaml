@@ -1,0 +1,27 @@
+# Test NetworkPolicy isolation
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-external-pod
+  namespace: default
+  labels:
+    app: test-external
+spec:
+  containers:
+    - name: netcat
+      image: busybox
+      command: ['sh', '-c', 'while true; do sleep 3600; done']
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-internal-pod
+  namespace: chatapp
+  labels:
+    app: test-internal
+spec:
+  containers:
+    - name: netcat
+      image: busybox
+      command: ['sh', '-c', 'while true; do sleep 3600; done']

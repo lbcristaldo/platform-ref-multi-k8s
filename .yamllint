@@ -1,5 +1,15 @@
 extends: default
 
 rules:
-  line-length: disable
+  line-length:
+    max: 120
+    level: warning
+  indentation:
+    spaces: 2
   document-start: disable
+  comments:
+    min-spaces-from-content: 1
+
+ignore: |
+  .github/
+  .git/

@@ -1,0 +1,96 @@
+name: Validate Manifests
+
+on:
+  pull_request:
+    paths:
+      - 'apis/**'
+      - 'cluster/**'
+      - 'examples/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'apis/**'
+      - 'cluster/**'
+      - 'examples/**'
+
+jobs:
+  validate-crossplane:
+    name: Validate Crossplane Resources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+      
+      - name: Setup kind
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: validation
+          wait: 120s
+      
+      - name: Validate XRDs
+        run: |
+          kubectl apply --dry-run=server -f apis/network/definition.yaml
+          kubectl apply --dry-run=server -f apis/database/definition.yaml
+          kubectl apply --dry-run=server -f apis/cache/definition.yaml
+      
+      - name: Validate Compositions
+        run: |
+          kubectl apply --dry-run=server -f apis/network/composition-aws.yaml
+          kubectl apply --dry-run=server -f apis/database/composition-aws.yaml
+          kubectl apply --dry-run=server -f apis/cache/composition-aws.yaml
+      
+      - name: Validate App Manifests
+        run: |
+          kubectl apply --dry-run=server -k cluster/app/
+      
+      - name: Validate Security Manifests
+        run: |
+          kubectl apply --dry-run=server -f cluster/security/rbac/
+          kubectl apply --dry-run=server -f cluster/security/network-policies/
+
+  lint-yaml:
+    name: Lint YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: YAML Lint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .
+          config_file: .yamllint
+          strict: true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy - IaC Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'cluster/'
+          format: 'sarif'
+          output: 'trivy-iac-results.sarif'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-iac-results.sarif'
+      
+      - name: Run Trivy - Fail on Critical
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'cluster/'
+          exit-code: '1'
+          severity: 'CRITICAL'

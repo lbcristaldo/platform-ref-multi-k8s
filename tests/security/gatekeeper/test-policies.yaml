@@ -1,0 +1,75 @@
+# Test Gatekeeper policy enforcement
+
+# This should be REJECTED (no resource limits)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-no-limits
+  namespace: chatapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-no-limits
+  template:
+    metadata:
+      labels:
+        app: test-no-limits
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.21
+          # NO resources defined - should be rejected
+
+---
+# This should be REJECTED (uses :latest tag)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-latest-tag
+  namespace: chatapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-latest-tag
+  template:
+    metadata:
+      labels:
+        app: test-latest-tag
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest  # Should be rejected
+          resources:
+            limits:
+              memory: 128Mi
+              cpu: 100m
+
+---
+# This should be ACCEPTED
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-valid
+  namespace: chatapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-valid
+  template:
+    metadata:
+      labels:
+        app: test-valid
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.21  # Explicit tag 
+          resources:
+            limits:
+              memory: 128Mi
+              cpu: 100m
+            requests:
+              memory: 64Mi
+              cpu: 50m
