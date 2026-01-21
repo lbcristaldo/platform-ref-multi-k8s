@@ -10,7 +10,7 @@ spec:
   compositeTypeRef:
     apiVersion: database.platform.example.com/v1alpha1
     kind: XMongoDatabase
-  
+
   resources:
     # Subnet Group for DocumentDB
     - name: documentdb-subnet-group
@@ -36,7 +36,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: metadata.labels[crossplane.io/claim-name]
           toFieldPath: spec.forProvider.tags.claim
-    
+
     # Security Group for DocumentDB
     - name: documentdb-security-group
       base:
@@ -56,7 +56,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Security Group Rule - Allow MongoDB port
     - name: documentdb-sg-rule-ingress
       base:
@@ -77,7 +77,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # DocumentDB Cluster Parameter Group
     - name: documentdb-parameter-group
       base:
@@ -106,7 +106,7 @@ spec:
             - type: string
               string:
                 fmt: "docdb%s"
-    
+
     # DocumentDB Cluster
     - name: documentdb-cluster
       base:
@@ -171,7 +171,7 @@ spec:
         - type: ToCompositeFieldPath
           fromFieldPath: status.atProvider.port
           toFieldPath: status.port
-    
+
     # DocumentDB Cluster Instance (primary)
     - name: documentdb-instance-primary
       base:
@@ -200,7 +200,7 @@ spec:
                 small: db.t3.medium
                 medium: db.r5.large
                 large: db.r5.xlarge
-    
+
     # DocumentDB Cluster Instance (replica) - only if multiAZ
     - name: documentdb-instance-replica
       base:

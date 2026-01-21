@@ -65,7 +65,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: nginx:1.21  # Explicit tag 
+          image: nginx:1.21  # Explicit tag
           resources:
             limits:
               memory: 128Mi

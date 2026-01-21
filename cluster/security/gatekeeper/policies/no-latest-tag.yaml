@@ -11,13 +11,13 @@ spec:
     - target: admission.k8s.gatekeeper.sh
       rego: |
         package k8scontainerlimits
-        
+
         violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           not container.resources.limits.memory
           msg := sprintf("Container %v has no memory limit", [container.name])
         }
-        
+
         violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           not container.resources.limits.cpu
@@ -49,13 +49,13 @@ spec:
     - target: admission.k8s.gatekeeper.sh
       rego: |
         package k8simagelatest
-        
+
         violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           endswith(container.image, ":latest")
           msg := sprintf("Container %v uses :latest tag", [container.name])
         }
-        
+
         violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           not contains(container.image, ":")

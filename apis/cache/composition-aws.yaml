@@ -10,7 +10,7 @@ spec:
   compositeTypeRef:
     apiVersion: cache.platform.example.com/v1alpha1
     kind: XRedisCache
-  
+
   resources:
     # Subnet Group for ElastiCache
     - name: elasticache-subnet-group
@@ -37,7 +37,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: metadata.labels[crossplane.io/claim-name]
           toFieldPath: spec.forProvider.tags.claim
-    
+
     # Security Group for ElastiCache
     - name: elasticache-security-group
       base:
@@ -57,7 +57,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Security Group Rule - Allow Redis port
     - name: elasticache-sg-rule-ingress
       base:
@@ -84,7 +84,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.port
           toFieldPath: spec.forProvider.toPort
-    
+
     # ElastiCache Parameter Group
     - name: elasticache-parameter-group
       base:
@@ -114,7 +114,7 @@ spec:
               string:
                 fmt: "redis%s"
                 type: Format
-    
+
     # ElastiCache Replication Group (cluster mode disabled)
     - name: elasticache-replication-group
       base:
