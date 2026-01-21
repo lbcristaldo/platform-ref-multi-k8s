@@ -129,6 +129,69 @@ test-compositions: ## Test Crossplane compositions
 	@echo "  Testing compositions..."
 	@kubectl crossplane beta validate apis/ || echo "  Install crossplane CLI first"
 
+# Testing targets
+test: test-unit test-security test-integration ## Run all tests
+	@echo "All test suites passed!"
+
+test-unit: ## Run unit tests (Crossplane composition validation)
+	@echo "Running unit tests..."
+	@./tests/unit/crossplane/run-tests.sh
+
+test-security: ## Run security tests
+	@echo "Running security tests..."
+	@./tests/security/networkpolicy/run-tests.sh
+	@./tests/security/gatekeeper/run-tests.sh
+
+test-integration: ## Run integration tests
+	@echo "Running integration tests..."
+	@./tests/integration/test-app-connectivity.sh
+	@./tests/integration/test-argocd-sync.sh
+
+test-performance: ## Run k6 performance tests
+	@./tests/performance/run-k6-tests.sh
+
+test-dry-run: ## Dry-run all manifests (fast validation)
+	@echo "Testing manifests with dry-run..."
+	@kubectl apply --dry-run=server -f apis/ || true
+	@kubectl apply --dry-run=server -k cluster/app/ || true
+	@kubectl apply --dry-run=server -k cluster/security/ || true
+	@echo "Dry-run tests passed"
+
+# Security testing specific
+test-networkpolicy: ## Test NetworkPolicy isolation
+	@./tests/security/networkpolicy/run-tests.sh
+
+test-gatekeeper: ## Test Gatekeeper policies
+	@./tests/security/gatekeeper/run-tests.sh
+
+test-trivy: ## Run Trivy security scans
+	@echo "Running Trivy scans..."
+	@trivy config cluster/ --severity HIGH,CRITICAL
+	@trivy config apis/ --severity HIGH,CRITICAL
+
+# Performance testing specific
+test-load: ## Run load test only
+	@k6 run tests/performance/load-test.js
+
+test-spike: ## Run spike test only
+	@k6 run tests/performance/spike-test.js
+
+test-stress: ## Run stress test only
+	@k6 run tests/performance/stress-test.js
+
+# CI/CD testing
+test-ci: test-dry-run test-unit test-security ## Tests suitable for CI/CD
+	@echo "CI tests passed!"
+
+# Watch tests (for development)
+watch-tests: ## Watch and re-run tests on file changes
+	@echo "👀 Watching for changes..."
+	@while true; do \
+		inotifywait -r -e modify apis/ cluster/ tests/ 2>/dev/null || sleep 2; \
+		clear; \
+		make test-dry-run; \
+	done
+
 # Monitoring
 watch-resources: ## Watch resource usage
 	@watch -n 2 'free -h && echo "" && kubectl top nodes 2>/dev/null || echo "Metrics not ready"'

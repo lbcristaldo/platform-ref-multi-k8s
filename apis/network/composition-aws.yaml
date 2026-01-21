@@ -8,7 +8,7 @@ spec:
   compositeTypeRef:
     apiVersion: network.platform.example.com/v1alpha1
     kind: XNetwork
-  
+
   resources:
     # VPC
     - name: vpc
@@ -43,7 +43,7 @@ spec:
         - type: ToCompositeFieldPath
           fromFieldPath: status.atProvider.id
           toFieldPath: status.vpcId
-    
+
     # Internet Gateway
     - name: internet-gateway
       base:
@@ -61,7 +61,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Private Subnet - AZ1
     - name: private-subnet-az1
       base:
@@ -95,7 +95,7 @@ spec:
             - type: string
               string:
                 fmt: "%sa"
-    
+
     # Private Subnet - AZ2
     - name: private-subnet-az2
       base:
@@ -129,7 +129,7 @@ spec:
             - type: string
               string:
                 fmt: "%sb"
-    
+
     # Public Subnet - AZ1
     - name: public-subnet-az1
       base:
@@ -164,7 +164,7 @@ spec:
             - type: string
               string:
                 fmt: "%sa"
-    
+
     # Public Subnet - AZ2
     - name: public-subnet-az2
       base:
@@ -199,7 +199,7 @@ spec:
             - type: string
               string:
                 fmt: "%sb"
-    
+
     # NAT Gateway EIP
     - name: nat-eip
       base:
@@ -216,7 +216,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # NAT Gateway
     - name: nat-gateway
       base:
@@ -239,7 +239,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Public Route Table
     - name: public-route-table
       base:
@@ -258,7 +258,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Private Route Table
     - name: private-route-table
       base:
@@ -277,7 +277,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Public Route to Internet Gateway
     - name: public-route
       base:
@@ -297,7 +297,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Private Route to NAT Gateway
     - name: private-route
       base:
@@ -317,7 +317,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Public Subnet Association AZ1
     - name: public-rt-assoc-az1
       base:
@@ -339,7 +339,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Public Subnet Association AZ2
     - name: public-rt-assoc-az2
       base:
@@ -361,7 +361,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Private Subnet Association AZ1
     - name: private-rt-assoc-az1
       base:
@@ -383,7 +383,7 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.parameters.region
           toFieldPath: spec.forProvider.region
-    
+
     # Private Subnet Association AZ2
     - name: private-rt-assoc-az2
       base:
