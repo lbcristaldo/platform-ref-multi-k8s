@@ -10,9 +10,9 @@ metadata:
   name: chatapp-admin
   namespace: chatapp
 rules:
-  - apiGroups: ["", "apps", "batch"]
-    resources: ["*"]
-    verbs: ["*"]
+  - apiGroups: ["apps", "batch"]
+    resources: ["deployments", "statefulsets", "jobs", "cronjobs", "pods"]
+    verbs: ["get", "list", "create", "update", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
