@@ -39,6 +39,7 @@ spec:
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
+            runAsGroup: 10000
             capabilities:
               drop:
                 - ALL
