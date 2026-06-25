@@ -32,4 +32,3 @@ metadata:
 spec:
   package: xpkg.upbound.io/upbound/provider-aws-rds:v1.1.0
   packagePullPolicy: IfNotPresent
-

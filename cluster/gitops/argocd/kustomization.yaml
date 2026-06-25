@@ -41,4 +41,3 @@ patches:
     target:
       kind: StatefulSet
       name: argocd-application-controller
-
